@@ -184,6 +184,7 @@ const formData = useForm({
     isNew: selectedradioOption,
     category: selectedOption,
     project_title: null,
+    year_established: null,
     type: 3,
     files: [],
     latitude: 14.069,
@@ -239,6 +240,10 @@ const submit = () => {
             }
             if (formData.category == null) {
                 toast.warning("Category must not be Empty!");
+                return;
+            }
+            if (formData.year_established == null) {
+                toast.warning("Business Established must not be Empty!");
                 return;
             }
             formData.post("/applicationform/store", {
@@ -322,7 +327,8 @@ function isCurrentSubCategory(subcategory, index) {
                 <div style="display: flex; width:100%; gap:10px;">
                     <TextInput name="Business Name" v-model:modelValue="formData.project_title" :isUppercase="true"
                         style="width:80%;" />
-                    <YearPicker name="Business Established" style="width:20%;" />
+                        <YearPicker name="Business Established" v-model:modelValue="formData.year_established"
+                        style="width:20%;" />
 
                 </div>
                 <div class="mb-3">

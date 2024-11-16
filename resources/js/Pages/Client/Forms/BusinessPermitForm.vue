@@ -212,46 +212,46 @@ const prepareFormData = () => {
 
 const submit = () => {
     const data = prepareFormData();
-    // Swal.fire({
-    //     title: "Confirm Upload",
-    //     text: "Are you sure you want to upload this form?",
-    //     icon: "warning",
-    //     showCancelButton: true,
-    //     confirmButtonColor: "#3085d6",
-    //     cancelButtonColor: "#d33",
-    //     confirmButtonText: "Yes, Upload It!",
-    // }).then((result) => {
-    //     if (result.isConfirmed) {
-    //         if (formData.project_title == null) {
-    //             toast.warning("Title must not be Empty!");
-    //             return;
-    //         }
-    //         if (formData.category == null) {
-    //             toast.warning("Category must not be Empty!");
-    //             return;
-    //         }
-    //         if (formData.year_established == null) {
-    //             toast.warning("Business Established must not be Empty!");
-    //             return;
-    //         }
-    //         // formData.post("/applicationform/store", {
-    //         //     data: data,
-    //         //     headers: { "Content-Type": "multipart/form-data" },
-    //         //     onError(error) {
-    //         //         toast.warning("Business Permit Form must Upload a file!");
+    Swal.fire({
+        title: "Confirm Upload",
+        text: "Are you sure you want to upload this form?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Upload It!",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (formData.project_title == null) {
+                toast.warning("Title must not be Empty!");
+                return;
+            }
+            if (formData.category == null) {
+                toast.warning("Category must not be Empty!");
+                return;
+            }
+            if (formData.year_established == null) {
+                toast.warning("Business Established must not be Empty!");
+                return;
+            }
+            formData.post("/applicationform/store", {
+                data: data,
+                headers: { "Content-Type": "multipart/form-data" },
+                onError(error) {
+                    toast.warning("Business Permit Form must Upload a file!");
 
-    //         //         console.log(error);
-    //         //     },
-    //         //     onSuccess(response) {
-    //         //         // Swal.fire({
-    //         //         //     title:'Success',
-    //         //         //     icon:'success',
-    //         //         //     text:'Application form Uploaded Successfully!'
-    //         //         // })
-    //         //     },
-    //         // });
-    //     }
-    // });
+                    console.log(error);
+                },
+                onSuccess(response) {
+                    // Swal.fire({
+                    //     title:'Success',
+                    //     icon:'success',
+                    //     text:'Application form Uploaded Successfully!'
+                    // })
+                },
+            });
+        }
+    });
 };
 
 const showMaps = ref(false);
