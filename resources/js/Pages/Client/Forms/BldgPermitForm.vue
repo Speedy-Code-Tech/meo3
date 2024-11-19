@@ -15,6 +15,11 @@ import YearPicker from "../../Components/YearPicker.vue";
 
 const props = defineProps({
     requirements: [Object, Array],
+    allReq: {
+        type: Number,
+        required: true, // Set to `true` if this prop is mandatory
+    },
+
 });
 const toast = useToast();
 defineOptions({ layout: ClientLayout });
@@ -237,12 +242,26 @@ const submit = () => {
                 toast.warning("Business Established must not be Empty!");
                 return;
             }
+
+            const uploadedFilesCount = formData.files.filter(file => file != null).length;
+
+            if (props.allReq != uploadedFilesCount) {
+                toast.error("Upload all the files First!");
+                return;
+            }
+
             formData.post("/applicationform/store", {
                 data: data,
                 onError(error) {
-                    toast.warning("Building Permit Form must Upload a file!");
-
-                    console.log(error);
+                    if (error.error == "Please complete your profile information to process your data.") {
+                        Swal.fire({
+                            title: 'Warning',
+                            icon: 'error',
+                            text: error.error + " Your Information is in Settings"
+                        })
+                    } else {
+                        toast.warning("Business Permit Form must Upload a file!");
+                    }
                 },
                 onSuccess(response) {
                     console.log(response);
@@ -303,6 +322,7 @@ watchEffect(() => {
 
 <template>
     <div class="w-full max-w-4xl mx-auto px-4 py-6 rounded-lg card mt-5">
+
         <Head title="DocumentView" />
         <h1 class="text-2xl font-bold mb-2 text-center">
             Building Permit Application Form
@@ -313,96 +333,54 @@ watchEffect(() => {
             format (.pdf).
         </p>
 
-        <form
-            @submit.prevent="submit"
-            method="POST"
-            enctype="multipart/form-data"
-        >
+        <form @submit.prevent="submit" method="POST" enctype="multipart/form-data">
             <div :class="{ hidden: requirements.current_page != 1 }">
                 <!-- <RadioButton name="Please check(✔)applicable box:" :options="radioOptions"
                     v-model:modelValue="selectedradioOption" :message="radioError"/> -->
 
-                <SelectInput
-                    name="Select Category"
-                    :options="selectOptions"
-                    v-model:modelValue="selectedOption"
-                />
+                <SelectInput name="Select Category" :options="selectOptions" v-model:modelValue="selectedOption" />
 
                 <div style="display: flex; width:100%; gap:10px;">
                     <TextInput name="Business Name" v-model:modelValue="formData.project_title" :isUppercase="true"
                         style="width:80%;" />
-                        <YearPicker name="Business Established" v-model:modelValue="formData.year_established"
+                    <YearPicker name="Business Established" v-model:modelValue="formData.year_established"
                         style="width:20%;" />
 
                 </div>
                 <div class="mb-3">
                     Proposed Location:
-                    <span
-                        class="text-link italic cursor-pointer"
-                        @click="toggleMaps(true)"
-                        >See Maps</span
-                    >
+                    <span class="text-link italic cursor-pointer" @click="toggleMaps(true)">See Maps</span>
                 </div>
-                <Map
-                    :lat="formData.latitude"
-                    :lng="formData.longitude"
-                    :show="showMaps"
-                    @update:show="toggleMaps(false)"
-                    @newLocation="saveLocation"
-                />
+                <Map :lat="formData.latitude" :lng="formData.longitude" :show="showMaps"
+                    @update:show="toggleMaps(false)" @newLocation="saveLocation" />
             </div>
-            <PdfContainer
-                :pdfUrl="pdfDownloadUrl"
-                :show.sync="showPDFtemplate"
-                :title="title"
-                @update:show="togglePDFformatModal"
-            />
+            <PdfContainer :pdfUrl="pdfDownloadUrl" :show.sync="showPDFtemplate" :title="title"
+                @update:show="togglePDFformatModal" />
 
             <div v-for="(item, index) in requirements.data" :key="index">
-                <h1
-                    class="text-2xl font-bold mb-2"
-                    v-if="isCurrentCategory(item.category_name, index)"
-                >
+                <h1 class="text-2xl font-bold mb-2" v-if="isCurrentCategory(item.category_name, index)">
                     {{ item.category_name }}
                     <hr class="border-gray-300 mb-6 mt-2" />
                 </h1>
-                <p
-                    class="p-4 bg-violet-200 mb-3"
-                    v-if="isCurrentSubCategory(item.subcategory_name, index)"
-                >
+                <p class="p-4 bg-violet-200 mb-3" v-if="isCurrentSubCategory(item.subcategory_name, index)">
                     {{ item.subcategory_name }}
                 </p>
 
-                <FileAction
-                    :label="item.requirements_name"
-                    :title="item.requirements_name"
-                    :inputId="item.requirements_id"
-                    @file-selected="handleFileSelected"
-                    @label="handlePdfTitle"
-                    :downloadableFile="item.template_file_path"
-                    @download-url="handleDownload"
-                    :hasUploadedFile="checkFileUpload(item.requirements_id)"
-                />
+                <FileAction :label="item.requirements_name" :title="item.requirements_name"
+                    :inputId="item.requirements_id" @file-selected="handleFileSelected" @label="handlePdfTitle"
+                    :downloadableFile="item.template_file_path" @download-url="handleDownload"
+                    :hasUploadedFile="checkFileUpload(item.requirements_id)" />
             </div>
 
             <div class="flex items-center justify-between mb-3">
-                <Pagination
-                    :currentPage="requirements.current_page"
-                    :lastPage="requirements.last_page"
-                    :url="routeName"
-                    :previousPageUrl="requirements.prev_page_url"
-                    :nextPageUrl="requirements.next_page_url"
-                />
+                <Pagination :currentPage="requirements.current_page" :lastPage="requirements.last_page" :url="routeName"
+                    :previousPageUrl="requirements.prev_page_url" :nextPageUrl="requirements.next_page_url" />
                 <div>
-                    <button
-                        class="danger-btn"
-                        :class="{
-                            hidden:
-                                requirements.last_page !=
-                                requirements.current_page,
-                        }"
-                        :disabled="formData.processing"
-                    >
+                    <button class="danger-btn" :class="{
+                        hidden:
+                            requirements.last_page !=
+                            requirements.current_page,
+                    }" :disabled="formData.processing">
                         Submit
                     </button>
                 </div>

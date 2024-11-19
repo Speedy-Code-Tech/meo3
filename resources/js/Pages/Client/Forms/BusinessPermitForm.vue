@@ -15,6 +15,11 @@ import Swal from "sweetalert2";
 import { watch } from "vue";
 const props = defineProps({
     requirements: [Object, Array],
+    allReq: {
+        type: Number,
+        required: true, // Set to `true` if this prop is mandatory
+    },
+
 });
 const toast = useToast();
 defineOptions({ layout: ClientLayout });
@@ -210,8 +215,12 @@ const prepareFormData = () => {
     return formData;
 };
 
+var count = ref(0)
+var lastCount = ref(0)
+
 const submit = () => {
     const data = prepareFormData();
+
     Swal.fire({
         title: "Confirm Upload",
         text: "Are you sure you want to upload this form?",
@@ -234,15 +243,34 @@ const submit = () => {
                 toast.warning("Business Established must not be Empty!");
                 return;
             }
+
+
+            const uploadedFilesCount = formData.files.filter(file => file != null).length;
+
+            if (props.allReq != uploadedFilesCount) {
+                toast.error("Upload all the files First!");
+                return;
+            }
+
             formData.post("/applicationform/store", {
                 data: data,
                 headers: { "Content-Type": "multipart/form-data" },
                 onError(error) {
-                    toast.warning("Business Permit Form must Upload a file!");
+                    if (error.error == "Please complete your profile information to process your data.") {
+                        Swal.fire({
+                            title: 'Warning',
+                            icon: 'error',
+                            text: error.error + " Your Information is in Settings"
+                        })
+                    } else {
+                        toast.warning("Business Permit Form must Upload a file!");
+                    }
 
                     console.log(error);
                 },
                 onSuccess(response) {
+                    console.log(response);
+                    // if(resp)
                     // Swal.fire({
                     //     title:'Success',
                     //     icon:'success',
@@ -300,28 +328,27 @@ var titles = localStorage.getItem("title");
 watchEffect(() => {
     titles = localStorage.getItem("title") || "Default";
 });
-var count = ref(0)
-
 const areAllFilesUploaded = computed(() => {
+
     formData.files.forEach((file, index) => {
         console.log("Files System", index);
-        
+        lastCount = index
     })
-      // Filter out null or undefined files in formData.files and count the valid ones
-      const uploadedFilesCount = formData.files.filter(file => file != null).length;
-    
+    // Filter out null or undefined files in formData.files and count the valid ones
+    const uploadedFilesCount = formData.files.filter(file => file != null).length;
+
     console.log("Uploaded Files Count:", uploadedFilesCount);
-    
-    count=ref(uploadedFilesCount)
+
+    count = ref(uploadedFilesCount)
     return props.requirements.data.length == uploadedFilesCount;
-    
+
 }
 )
 
 watch(formData.files, () => {
-    console.log("MyCount",formData.files.length);
+    console.log("MyCount", formData.files.length);
 
-    console.log("File list updated:", formData.files.length);
+    console.log("File list updated:", props.requirements.data.length);
 });
 
 </script>

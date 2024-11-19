@@ -25,7 +25,15 @@ class ApplicationFormController extends Controller
      */
     public function store(Request $request)
     {
+        if (auth()->user()->client_id === null) {
+            return back()->withErrors([
+                'error' => "Please complete your profile information to process your data."
+            ]);
+        }
+        
+
         try {
+            // if()
             $validated = $request->all();
             $data = [
                 'category' => $validated['category'],
@@ -37,12 +45,12 @@ class ApplicationFormController extends Controller
                 'type' => $validated['type'],
                 'business_established'=>$validated['year_established']
             ];
-         
+
             // $form = ApplicationForm::where('client_id', auth()->user()->client_id)
             // ->where('type', $validated['type'])
             // ->whereIn('status', ['Pending', 'Returned'])
             // ->first();
-            
+
             // if ($form) {
             //     $form->update($data);
             // } else {
@@ -54,7 +62,7 @@ class ApplicationFormController extends Controller
             //         'type' => $validated['type'],
             //         'status' => "Pending",
             //     ],
-                
+
             // );
 
             $files = $request->allFiles();
@@ -97,9 +105,9 @@ class ApplicationFormController extends Controller
             // return Redirect::route('applicationform')->withToast('error', $th->getMessage());
         }
     }
-    public function update(Request $request,$id)
+    public function update(Request $request, $id)
     {
-        
+
         try {
             $validated = $request->all();
             $data = [
@@ -111,16 +119,16 @@ class ApplicationFormController extends Controller
                 'longitude' => $validated['longitude'] ?? null,
                 'type' => $validated['type'],
             ];
-         
-                $form = ApplicationForm::where('id',$id)->first();
-                $form->category = $validated['category'];
-                $form->status = "Pending";
-                $form->project_title = $validated['project_title'];
-                $form->latitude = $validated['latitude'];
-                $form->longitude = $validated['longitude'];
-                $form->remarks = NULL;
-                $form->checked_by = NULL;
-                $form->update();
+
+            $form = ApplicationForm::where('id', $id)->first();
+            $form->category = $validated['category'];
+            $form->status = "Pending";
+            $form->project_title = $validated['project_title'];
+            $form->latitude = $validated['latitude'];
+            $form->longitude = $validated['longitude'];
+            $form->remarks = NULL;
+            $form->checked_by = NULL;
+            $form->update();
 
 
             $files = $request->allFiles();
@@ -163,73 +171,83 @@ class ApplicationFormController extends Controller
             // return Redirect::route('applicationform')->withToast('error', $th->getMessage());
         }
     }
-    public function getBusinessReqs() {
+    public function getBusinessReqs()
+    {
         $requirements = Requirement::getRequirements(5, 1);
 
         return Inertia::render('Client/Forms/BusinessPermitForm', [
-            'requirements' => $requirements
+            'requirements' => $requirements,
+            'allReq'=>  Requirement::where('permit_type',1)->count()
         ]);
     }
 
-    public function getBusinessRenewalReqs() {
+    public function getBusinessRenewalReqs()
+    {
         $requirements = Requirement::getRequirements(5, 3);
-
+        $data = ApplicationForm::with('client')->where('client_id',auth()->user()->client_id)->where('status','Approved')->get();
         return Inertia::render('Client/Forms/RenewalForm', [
-            'requirements' => $requirements
+            'requirements' => $requirements,
+            'allReq'=>  Requirement::where('permit_type',3)->count(),
+            'queue'=>$data
         ]);
     }
 
-    
-    public function getBuildingReqs() {
+
+    public function getBuildingReqs()
+    {
         $requirements = Requirement::getRequirements(5, 2);
-    
+
         return Inertia::render('Client/Forms/BldgPermitForm', [
-            'requirements' => $requirements
+            'requirements' => $requirements,
+            'allReq'=>  Requirement::where('permit_type',2)->count()
         ]);
     }
 
-    public function getSubmittedForms() {
+    public function getSubmittedForms()
+    {
         $records = ApplicationForm::with(['client', 'checkedBy'])
             ->where('client_id', auth()->user()->client_id)
             ->paginate(5); // Pagination with 5 records per page
-        
+
         return Inertia::render('Client/SubmittedForms', [
             'records' => $records, // Passing paginated data
         ]);
     }
-    
-    
 
-    public function getRecord(Request $request) {
+
+
+    public function getRecord(Request $request)
+    {
         $id = $request->id;
-        
+
         $form = ApplicationForm::find($id);
 
         $type = $form->type;
         $clientId = $form->client_id;
         $record = Requirement::getRequirementsWithApplicationForm($id, $clientId, 5, $type);
-        $isApprove = ApplicationDocument::where('application_form_id',$form->id)->get();
+        $isApprove = ApplicationDocument::where('application_form_id', $form->id)->get();
 
         $client = Client::find($clientId);
- 
+
         return Inertia::render('Client/ApplicationFormView', [
             'form' => $form,
             'record' => $record,
             'client' => $client,
             'typeProp' => $type,
             'params' => $request->only(['id', 'type', 'clientId']),
-            'fileApprove'=>$isApprove
+            'fileApprove' => $isApprove
         ]);
     }
-    public function returned($title, $id){
-        $isApprove = ApplicationDocument::with(['form','requirement.subcat.category'])->where('application_form_id',$id)->get();
+    public function returned($title, $id)
+    {
+        $isApprove = ApplicationDocument::with(['form', 'requirement.subcat.category'])->where('application_form_id', $id)->get();
         $requirements = Requirement::getRequirements(40, 1);
         // $record = Requirement::getRequirementsWithApplicationForm($id, $clientId, 5, $type);
-        return Inertia::render('Client/return',[
-            'title'=>$title,
-            'datas'=>$isApprove,
-            'requirements'=>$requirements,
-            'id'=>$id
+        return Inertia::render('Client/return', [
+            'title' => $title,
+            'datas' => $isApprove,
+            'requirements' => $requirements,
+            'id' => $id
         ]);
     }
 }

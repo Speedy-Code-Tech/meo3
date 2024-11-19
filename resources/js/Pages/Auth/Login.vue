@@ -69,7 +69,7 @@ function goToRegister() {
                     <div class="flex flex-col items-center">
                         <button class="primary-btn">Login</button>
                         <hr>
-                        <a :href=" route('google.login') " class="btn btn-primary" style="display:flex; gap:10px; padding-top: 10px;">
+                        <a v-if="getType(type) == 'User'"    :href=" route('google.login') " class="btn btn-primary" style="display:flex; gap:10px; padding-top: 10px;">
                             <img src="https://static-00.iconduck.com/assets.00/google-icon-1024x1024-ilkrdfcp.png" alt="Google Logo"
                                 style="width: 20px; margin-right: 8px;">
                             Sign in with Google
